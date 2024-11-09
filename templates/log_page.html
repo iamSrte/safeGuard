@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <title>SafeGuard</title>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="stylesheet" href="/style/normalize.css">
+    <link rel="stylesheet" href="/style/main.css">
+</head>
+<body>
+<div class="screen-container">
+    <div class="page-bar">
+        <a class="inactive-item">Scan Area</a>
+        <a class="active-item">Scan Log</a>
+    </div>
+    <div class="log-box">
+        <table>
+            <tr class="table-header">
+                <th>#</th>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Passport</th>
+                <th>Scan Date</th>
+            </tr>
+            {% for id, first_name, last_name, passport, scan_date, scan_time, status in scans %}
+            <tr id='popup-link-{{ id }}' onclick="fetchDetails({{ id }})">
+                <td>{{ id }}</td>
+                <td>{{ first_name }} {{ last_name }}</td>
+                {% if status %}
+                <td>
+                    <div class="dot red-glow"></div>
+                    <a>Suspicious</a>
+                </td>
+                {% else %}
+                <td>
+                    <div class="dot green-glow"></div>
+                    <a>Clean</a>
+                </td>
+                {% endif %}
+                <td>{{ passport }}</td>
+                <td>{{ scan_date }} {{ scan_time }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div class="sidebar">
+        <a class="title">Search</a>
+        <form>
+            {% if params["scan_id"] == None %}
+            <div class="sidebar-item">
+                <label for="scan_id">ID</label>
+                <input type="text" id="scan_id" name="scan_id">
+            </div>
+            {% else %}
+            <div class="sidebar-item">
+                <label for="scan_id">ID</label>
+                <input type="text" id="scan_id" name="scan_id" value='{{ params["scan_id"] }}'>
+            </div>
+            {% endif %}
+            {% if params["pass_name"] == None %}
+            <div class="sidebar-item">
+                <label for="pass_name">Name</label>
+                <input type="text" id="pass_name" name="pass_name">
+            </div>
+            {% else %}
+            <div class="sidebar-item">
+                <label for="pass_name">Name</label>
+                <input type="text" id="pass_name" name="pass_name" value='{{ params["pass_name"] }}'>
+            </div>
+            {% endif %}
+            {% if params["passport_num"] == None %}
+            <div class="sidebar-item">
+                <label for="passport_num">Passport Number</label>
+                <input type="text" id="passport_num" name="passport_num">
+            </div>
+            {% else %}
+            <div class="sidebar-item">
+                <label for="passport_num">Passport Number</label>
+                <input type="text" id="passport_num" name="passport_num" value='{{ params["passport_num"] }}'>
+            </div>
+            {% endif %}
+            <div class="horizontal">
+                <button class="apply" type="submit">Apply</button>
+                <button class="reset" type="reset" onclick="window.location = window.location.pathname">Reset</button>
+            </div>
+        </form>
+        <img class="logo" src='/style/SafeGuard.svg' alt="safe guard logo.">
+        <div id="popup-window">
+            <div id="scan_details"></div>
+            <button id="close-button">Close</button>
+        </div>
+    </div>
+</div>
+</body>
+<!--<script>-->
+<!--    function fetchDetails(itemId) {-->
+<!--        var popupLink = document.getElementById(`popup-link-${itemId}`);-->
+<!--        var popupWindow = document.getElementById("popup-window");-->
+<!--        var closeButton = document.getElementById("close-button");-->
+<!--        fetch(`/scan/${itemId}`)-->
+<!--            .then(response => response.json())-->
+<!--            .then(data => {-->
+<!--                console.log(Object.keys.length)-->
+<!--                for (var i = 0; i < Object.keys.length; i++) {-->
+<!--                    console.log(data[i]['item'])-->
+<!--                    document.getElementById('scan_details').innerHTML = data[i]['item'];-->
+
+<!--                }-->
+<!--            })-->
+<!--            .catch(error => {-->
+<!--                console.error('Error:', error);-->
+<!--            });-->
+
+<!--        popupLink.addEventListener("click", function (event) {-->
+<!--            event.preventDefault();-->
+<!--            popupWindow.style.display = "block";-->
+<!--        });-->
+
+<!--        closeButton.addEventListener("click", function () {-->
+<!--            popupWindow.style.display = "none";-->
+<!--        });-->
+<!--    }-->
+<!--</script>-->
+</html>
