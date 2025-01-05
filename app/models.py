@@ -1,7 +1,7 @@
 import enum
-from db import Base
+from app.db import Base
 from sqlalchemy import Column, ForeignKey, CheckConstraint, String, CHAR, Date, Time, Enum, Integer
-from sqlalchemy.orm import relationship
+
 
 
 class Gender(enum.Enum):
@@ -16,9 +16,9 @@ class Passenger(Base):
         CheckConstraint("passport ~ '^[0-9]{9}$'"),
         CheckConstraint("phone_number ~ '^[0-9]{11}$'"),
         CheckConstraint("email_address ~ '^[a-zA-Z0-9._%+-]{1,64}@[a-zA-Z0-9.-]+.[a-zA-Z]{2,}$'"),
-        CheckConstraint("country ~ '^[a-zA-Z0-9''&(),.- ]+$'"),
-        CheckConstraint("city ~ '^[a-zA-Z''&()- ]+$'"),
-        CheckConstraint("street ~ '^[a-zA-Z0-9''&(),.- ]+$'"),
+        CheckConstraint("country ~ '^[a-zA-Z0-9''&(),. -]+$'"),
+        CheckConstraint("city ~ '^[a-zA-Z''&() -]+$'"),
+        CheckConstraint("street ~ '^[a-zA-Z0-9''&(),. -]+$'"),
         CheckConstraint("zip_code ~ '^[0-9]{10}$'"),
         CheckConstraint("first_name ~ '^[a-zA-Z''-]+$' AND last_name ~ '^[a-zA-Z''-]+$'"),
     )
@@ -40,8 +40,8 @@ class OutgoingFlight(Base):
     __tablename__ = 'outgoing_flights'
     __table_args__ = (
         CheckConstraint("flight_number ~ '^[A-Z0-9]{7}$'"),
-        CheckConstraint("to_country ~ '^[a-zA-Z0-9''&(),.- ]+$'"),
-        CheckConstraint("to_city ~ '^[a-zA-Z''&()- ]+$'"),
+        CheckConstraint("to_country ~ '^[a-zA-Z0-9''&(),. -]+$'"),
+        CheckConstraint("to_city ~ '^[a-zA-Z''&() -]+$'"),
     )
 
     flight_number = Column(CHAR(7), primary_key=True)
@@ -67,7 +67,7 @@ class ForbiddenItem(Base):
     __tablename__ = 'forbidden_items'
     __table_args__ = (
         CheckConstraint("item_id ~ '^[0-9]{4}$'"),
-        CheckConstraint("name ~ '^[a-zA-Z0-9''.,- ]+$'"),
+        CheckConstraint("name ~ '^[a-zA-Z0-9''., -]+$'"),
     )
 
     item_id = Column(CHAR(4), primary_key=True)

@@ -5,15 +5,15 @@ from fastapi.templating import Jinja2Templates
 from fastapi import FastAPI, Request, Depends
 from typing import Annotated, Optional
 
-from db import engine, SessionLocal, Base
-from models import Passenger, OutgoingFlight, ItemAction, ForbiddenItem, BaggageScan, ScanItem
-from schemas import PassengerBase, OutgoingFlightBase, ItemActionBase, ForbiddenItemBase, BaggageScanBase, ScanItemBase
+from app.db import engine, SessionLocal, Base
+from app.models import Passenger, OutgoingFlight, ItemAction, ForbiddenItem, BaggageScan, ScanItem
+from app.schemas import PassengerBase, OutgoingFlightBase, ItemActionBase, ForbiddenItemBase, BaggageScanBase, ScanItemBase
 
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
 
-templates = Jinja2Templates(directory='templates')
-app.mount('/style', StaticFiles(directory='style'), name='style')
+templates = Jinja2Templates(directory='app/templates')
+app.mount('/style', StaticFiles(directory='app/style'), name='style')
 
 
 def get_db():
