@@ -1,8 +1,9 @@
-from sqlalchemy import func, and_
+from sqlalchemy import func, delete, update
 from sqlalchemy.orm import Session
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request, Depends, HTTPException
+from pydantic import Field
 from typing import Annotated, Optional
 
 from app.db import engine, SessionLocal, Base
@@ -23,11 +24,16 @@ def get_db():
     finally:
         db.close()
 
-
 db_dependency = Annotated[Session, Depends(get_db)]
 
 
-def show_scan_logs(db: db_dependency, scan_id=None, pass_name=None, passport_num=None):
+@app.get('/')
+async def root(
+        request: Request, db: db_dependency,
+        scan_id: Optional[str] = None,
+        pass_name: Optional[str] = None,
+        passport_num: Optional[str] = None
+):
     status = db.query(ScanItem).filter(ScanItem.scan_id == BaggageScan.scan_id).exists()
     query = db.query(
         BaggageScan.scan_id,
@@ -46,39 +52,19 @@ def show_scan_logs(db: db_dependency, scan_id=None, pass_name=None, passport_num
         query = query.filter(func.concat(Passenger.first_name, ' ', Passenger.last_name).ilike(f'%{pass_name}%'))
     if passport_num:
         query = query.filter(Passenger.passport.ilike(f'%{passport_num}%'))
-    return query.all()
+    results = query.all()
 
-
-@app.get('/')
-async def root(
-        request: Request, db: db_dependency,
-        scan_id: Optional[str] = None,
-        pass_name: Optional[str] = None,
-        passport_num: Optional[str] = None
-):
-    params = {'scan_id': scan_id, 'pass_name': pass_name, 'passport_num': passport_num}
-    results = show_scan_logs(db, *params.values())
-
-    return templates.TemplateResponse('log_page.html',
-                                      {'request': request, 'scans': results, 'params': params})
-
-
-# @app.get('/scan/{scan_id}')
-# async def scan(db: db_dependency, scan_id):
-#     query = db.query(
-#         BaggageScan.scan_id,
-#         BaggageScan.date,
-#         ScanItem.scan_id,
-#         ForbiddenItem.name
-#     )
-#     query = query.filter(and_(ForbiddenItem.item_id == ScanItem.item_id, ScanItem.item_id == ForbiddenItem.item_id))
-#     query = query.filter(BaggageScan.scan_id == scan_id)
-#     query = query.all()
-#     results = {}
-#     for i, item in enumerate(query):
-#         results[i] = {'scan_id': item[0], 'date': item[1], 'item': item[3]}
-#     print(results)
-#     return results
+    return templates.TemplateResponse(
+        'log_page.html', {
+            'request': request,
+            'scans': results,
+            'params': {
+                'scan_id': scan_id,
+                'pass_name': pass_name,
+                'passport_num': passport_num
+            }
+        }
+    )
 
 
 @app.get('/scan/{scan_id}')
@@ -86,13 +72,33 @@ async def scan(db: db_dependency, scan_id):
     query = db.query(
         BaggageScan.scan_id,
         BaggageScan.date,
-        ForbiddenItem.name
-    ).filter(BaggageScan.scan_id == scan_id).filter(ForbiddenItem.item_id == ScanItem.item_id)
+        BaggageScan.time,
+        BaggageScan.flight_number,
+        Passenger.first_name,
+        Passenger.last_name,
+        Passenger.passport,
+    ).filter(BaggageScan.scan_id == scan_id).filter(BaggageScan.passenger_id == Passenger.passenger_id)
     query = query.all()
-    results = {}
+
+    if not query:
+        raise HTTPException(status_code=404, detail='Item not found')
+
+    response = {
+        'scan_id': query[0][0],
+        'data': query[0][1],
+        'time': query[0][2],
+        'flight_number': query[0][3],
+        'first_name': query[0][4],
+        'last_name': query[0][5],
+        'passport': query[0][6],
+        'items_found': {}
+    }
+    query = db.query(ForbiddenItem.name).filter(ScanItem.scan_id == scan_id).filter(
+        ForbiddenItem.item_id == ScanItem.item_id)
+    print(query.all())
     for i, item in enumerate(query):
-        results[i] = {'scan_id': item[0], 'date': item[1]}
-    return results
+        response['items_found'][i] = item[0]
+    return response
 
 
 @app.post('/add_passenger')
@@ -180,3 +186,30 @@ async def add_scan_item(scan_item: ScanItemBase, db: db_dependency):
     db.add(db_scan_item)
     db.commit()
     db.refresh(db_scan_item)
+
+
+@app.post('/remove_scan_item')
+async def remove_scan_item(scan_id, item_id, db: db_dependency):
+    query = (
+        delete(ScanItem)
+        .where(ScanItem.scan_id == scan_id)
+        .where(ScanItem.item_id == item_id)
+    )
+    if db.execute(query).rowcount == 0:
+        raise HTTPException(status_code=404, detail='Item not found')
+    db.commit()
+    return {'Item removed'}
+
+
+@app.post('/change_item_quantity')
+async def change_item_quantity(scan_id, item_id, quantity: int, db: db_dependency):
+    query = (
+        update(ScanItem)
+        .where(ScanItem.scan_id == scan_id)
+        .where(ScanItem.item_id == item_id)
+        .values(quantity=quantity)
+    )
+    if db.execute(query).rowcount == 0:
+        raise HTTPException(status_code=404, detail='Item not found')
+    db.commit()
+    return {'Item updated'}
