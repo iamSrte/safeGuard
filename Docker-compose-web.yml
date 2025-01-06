@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  web:
+    build: .
+    depends_on:
+      - db
+    volumes:
+      - ./:/code:ro
+    environment:
+      - DATABASE_URL=postgresql://${PG_USERNAME}:${PG_PASSWORD}@db:5432/${PG_DATABASE}
+    ports:
+      - "8000:8000"
+    networks:
+      - safeguard-net
+
+networks:
+  safeguard-net:
+    external: true
