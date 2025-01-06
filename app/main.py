@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi import FastAPI, Request, Depends, HTTPException
-from pydantic import Field
 from typing import Annotated, Optional
 
 from app.db import engine, SessionLocal, Base
