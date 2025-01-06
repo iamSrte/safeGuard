@@ -187,20 +187,7 @@ async def add_scan_item(scan_item: ScanItemBase, db: db_dependency):
     db.refresh(db_scan_item)
 
 
-@app.post('/remove_scan_item')
-async def remove_scan_item(scan_id, item_id, db: db_dependency):
-    query = (
-        delete(ScanItem)
-        .where(ScanItem.scan_id == scan_id)
-        .where(ScanItem.item_id == item_id)
-    )
-    if db.execute(query).rowcount == 0:
-        raise HTTPException(status_code=404, detail='Item not found')
-    db.commit()
-    return {'Item removed'}
-
-
-@app.post('/change_item_quantity')
+@app.patch('/change_item_quantity')
 async def change_item_quantity(scan_id, item_id, quantity: int, db: db_dependency):
     query = (
         update(ScanItem)
@@ -212,3 +199,16 @@ async def change_item_quantity(scan_id, item_id, quantity: int, db: db_dependenc
         raise HTTPException(status_code=404, detail='Item not found')
     db.commit()
     return {'Item updated'}
+
+
+@app.delete('/remove_scan_item')
+async def remove_scan_item(scan_id, item_id, db: db_dependency):
+    query = (
+        delete(ScanItem)
+        .where(ScanItem.scan_id == scan_id)
+        .where(ScanItem.item_id == item_id)
+    )
+    if db.execute(query).rowcount == 0:
+        raise HTTPException(status_code=404, detail='Item not found')
+    db.commit()
+    return {'Item removed'}
